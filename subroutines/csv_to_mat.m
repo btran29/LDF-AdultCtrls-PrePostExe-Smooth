@@ -10,9 +10,9 @@ for i = 1:length(csvfiles)
     study = strrep(study,'.csv','');
     study = strrep(study,'''','');
     studyNameOutput = strsplit(study);
-    initial = cell2mat(studyNameOutput(1));
-    prePost = cell2mat(studyNameOutput(2));
-    date = cell2mat(studyNameOutput(3));
+    initial = cell2mat(studyNameOutput(2));
+    prePost = cell2mat(studyNameOutput(4));
+    date = cell2mat(studyNameOutput(5));
     save(study,'study','initial','prePost','date','time','temp','pressure','perfusion');
     clear study b time temp pressure perfusion study studyNameOutput initial prePost date
 end
