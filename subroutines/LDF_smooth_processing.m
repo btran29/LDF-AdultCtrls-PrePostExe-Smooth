@@ -143,8 +143,7 @@ bloodflow = trapz(tPostOcc(idxMax:idxPlat2Start),pBloodFlow(idxMax:idxPlat2Start
 
 % Skip further analysis if plateau 2 is greater than max
 if plat2 > pMax
-    delayed_peak = 1; %#ok<NASGU>
-    continue  %#ok<CONT>
+    delayed_peak = 1;
 end
 
 %% Locating fractions of max flow with linear interpolation
