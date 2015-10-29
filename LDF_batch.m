@@ -31,9 +31,12 @@
 % The eval function will be used to locate the actual numbers associated 
 % with the variables.
 
-outputEvalVars = {'initial' , 'initial'; 
+outputEvalVars = {...
+              'initial' , 'initial'; 
               'prePost' , 'Pre or post';
               'date' , 'date';
+              'patn' , 'patient identification number';
+              'visit' , 'study visit';
               'startOcc' , 'start of occlusion (sec)';
               'endOcc' , 'end of occlusion (sec)';
               'rSquared' , 'fit for determining post-occ plateau';
@@ -497,168 +500,8 @@ e.Quit
 % perfusion velocity, ratio of max perfusion over pre-occlusive plateau,
 % and pre-occlusive pleateau columns to correspond with their
 % variables
-fprintf('Completing filtered means analysis...\n');
 
-sampleSize = 1000;
-numStudiesLimit = 3;
-
-gPermVars = [colEndOccToMax,colPMax,colPVel,colPMaxOvrPlat1, colPlat1];
-gPermHeaders = {'EndOccToMax','pMax','pVel','MaxOverPlat1','plat1'};
-
-structInit = fieldnames(OutGrpPP);
-structState = {'Post','Pre'};
-
-% Pre-Allocate
-genPermOutArr = cell(size(fieldnames(OutGrpPP),1)-1,1);
-numGPermVars = size(gPermVars,2);
-
-maxBlockWidth = 5; % guesstimate for preallocation
-maxSummStatHeight = 11; % guesstimate for preallocation
-
-for iSubj = 1:length(genPermOutArr)
-    genPermOutArr{iSubj,1} = cell(sampleSize*2+ maxSummStatHeight, ...
-                                numGPermVars*maxBlockWidth+numGPermVars-1);
-end % Pre-allocation currently not 100% accurate and extensible
-
-% Generate filtered means analysis data
-for iSubj = 1:size(fieldnames(OutGrpPP),1)-1 % loop for ea. subject
-    currInit = char(structInit(iSubj));
-    
-    % Loop for ea. variabale
-    for iVar = 1:size(gPermVars,2); 
-        currGPermVar = gPermVars(iVar);
-        
-        % Loop for ea. pre-exe or post-exe state
-        for iPreOrPost = 1:size(structState,2) 
-            currState = char(structState(iPreOrPost));
-            currHeader = cell2mat(gPermHeaders(iVar));
-            data = cell2mat(OutGrpPP.(currInit).(currState)(:,currGPermVar));
-            
-            % Skip subjs where # of studies are insuff
-            if size(data,1) <=2 
-                continue
-            else
-            
-            % Call filtMeansSimulation script for AbsPerDiff Calculations%
-            filtMeansSimulation
-            genPermArr.randsmplOut = genPermArr.AbsPerDiff;
-            genPermArr.randMean    = genPermArr.AbsNumStudyMeans;
-            genPermArr.randStDev   = genPermArr.AbsStDev;
-            genPermArr.randStErr   = genPermArr.AbsStErr;
-
-            end % End conditional
-            
-            % Save headers
-            OutGrpPP.(currInit).genPerm.(currState).(currHeader) = genPermArr;
-           
-            % Re-organize data into blocks for excel output
-            blockHeight = size(num2cell(genPermArr.randsmplOut),1);
-            blockWidth = size(num2cell(genPermArr.randsmplOut),2);
-            
-            % Rearrange Sample data
-            randsmplOutYPos = (iPreOrPost-1)*blockHeight+(iPreOrPost);
-            randsmplOutXPos = (iVar-1)*blockWidth+(iVar-1);
-            genPermOutArr{iSubj,1}( ...
-                (1+randsmplOutYPos): ... % y pos for data block
-                (blockHeight+randsmplOutYPos), ...
-                (1+randsmplOutXPos): ... % x pos for data block
-                (blockWidth+randsmplOutXPos) ...
-                ) = num2cell(genPermArr.randsmplOut);
-            
-            % Capture generated summary statistics
-            gPermSummaryStat = {genPermArr.randMean,...
-                                genPermArr.randStDev,...
-                                genPermArr.randStErr};
-             
-            % Loop for ea. extra pre and post data block
-            for iSummStat = 1:length(gPermSummaryStat)
-                
-                % Starting after randPerm data, skip a line after ea block
-                blockYPos = blockHeight*2+3+iPreOrPost+(iSummStat-1)*3;
-                blockXPos = randsmplOutXPos;
-                genPermOutArr{iSubj,1}( ...
-                    blockYPos:blockYPos, ...
-                    (1+blockXPos):(blockWidth+blockXPos) ...
-                    ) = num2cell(gPermSummaryStat{iSummStat});
-            end % end pre/post data block loop
-        end % end exe-state loop
-        
-        % Variable Labels
-        headerYPos = 1;
-        headerXPos = randsmplOutXPos;
-        genPermOutArr{iSubj,1}(1,1+headerXPos) = gPermHeaders(iVar);    
-        
-        % TTEST (unpaired, homoscedastic)
-        for iCol = 1:blockWidth
-            % Select Column
-            grp1 = genPermOutArr{iSubj,1}(...
-                (1+1):(blockHeight+1),(iCol));
-            grp2 = genPermOutArr{iSubj,1}(...
-                (1+(blockHeight+2)):((blockHeight+2)+blockHeight),(iCol));
-            
-            % Convert to double
-            grp1 = cell2mat(grp1);
-            grp2 = cell2mat(grp2);
-            
-            % 2-sample T-Test (paired-sample, homoscedastic, 2-tailed)
-            [h,p] = ttest(grp1,grp2);
-            
-            % Write result to array
-            genPermOutArr{iSubj,1}...
-                (blockYPos+2,(1+randsmplOutXPos+(iCol-1))) = {p};
-        end    
-    end
-end
-
-
-% Labels for excel sheet (did not use recursive fcn for-loop for clarity)
-gpLabels = cell(63,1);
-n = 1; % Start
-sS = sampleSize+1; % Interval
-gpLabels(n) = {'AbsPerDiff Vars'};
-gpLabels(n+3) = {'Post'};
-gpLabels(n+3+sS) = {'Pre'};
-gpLabels(n+3+(sS*2)) = {'PostMean'};
-gpLabels(n+3+(sS*2)+1) = {'PreMean'};
-gpLabels(n+3+(sS*2)+3) = {'PostStDev'};
-gpLabels(n+3+(sS*2)+4) = {'PreStDev'};
-gpLabels(n+3+(sS*2)+6) = {'PostStErr'};
-gpLabels(n+3+(sS*2)+7) = {'PreStErr'};
-gpLabels(n+3+(sS*2)+9) = {'T-Test'};
-
-fprintf('Saving filtered means analysis...\n');
-filename2 = 'outputGenPerm.xlsx';
-
-% Export current time
-currTime = datestr(now);
-currTime = {'Gen on'; currTime};
-xlswrite(filename2,currTime,1,'A1');
-
-% Todo: combine labels and tables for less xlswrite calls
-
-% Write output to outputGenPerm.xslx
-for iSubj = 1:size(fieldnames(OutGrpPP),1)-1;
-    currGenPerm = genPermOutArr{iSubj,1};
-    xlswrite(filename2,currGenPerm,iSubj+1,'B3');
-    xlswrite(filename2,gpLabels,iSubj+1,'A1');
-end
-
-% Dynamically name outputGenPerm.xslx sheets via ActiveX control
-structInit = fieldnames(OutGrpPP);
-e = actxserver('Excel.Application'); % open ActiveX server
-ewb = e.Workbooks.Open([pwd '\outputGenPerm.xlsx']);
-ewb.Worksheets.Item(1).Name = 'genTime';
-
-% Subject Loop
-for iSubj = 1:size(fieldnames(OutGrpPP),1)-1
-    ewb.Worksheets.Item(iSubj+1).Name = char(structInit(iSubj));
-    ewb.Save
-end 
-ewb.Close(false);
-e.Quit
-
-% save('output.mat','outputArray');
-
+% Not implemented
 %% Resampling Analysis
 % Not implemented
 
@@ -680,11 +523,11 @@ fprintf('Saving summary statistics...\n');
 % All subjects
 % Pre-allocate Data tables/Convert data table to double for number functions
 OutGrpPP.SummaryStats.data = grpDataMod;
-OutGrpPP.SummaryStats.dataSumm(:,4:numvars) = cell2mat(grpDataMod(:,4:numvars));
+OutGrpPP.SummaryStats.dataSumm(:,6:numvars) = cell2mat(grpDataMod(:,6:numvars));
 summStatsTotal = zeros(3,numvars);
 
 % Flag total, pre-exe, post-exe studies
-flagAllStudies  = ((OutGrpPP.SummaryStats.dataSumm(:,4)>0));
+flagAllStudies  = ((OutGrpPP.SummaryStats.dataSumm(:,6)>0));
 flagPostStudies = (strcmp(grpDataMod(:,2),'Post'));
 flagPreStudies  = (strcmp(grpDataMod(:,2),'Pre'));
 summStatsSet    = {flagAllStudies,flagPostStudies,flagPreStudies};
@@ -693,7 +536,7 @@ summStatsSet    = {flagAllStudies,flagPostStudies,flagPreStudies};
 statblock = zeros(4*size(summStatsSet,2),numvars);
 for x = 1:size(summStatsSet,2)
     exeStatBlock = zeros(3,numvars); % 3 summary stats
-    for column = 4:size(grpDataMod,2)
+    for column = 6:size(grpDataMod,2)
         data = OutGrpPP.SummaryStats.dataSumm(summStatsSet{x},column);
         exeStatBlock(1,column-3) = mean(data);
         exeStatBlock(2,column-3) = std(data);
@@ -712,7 +555,7 @@ if x == 3
     tTestBlock = zeros(1,numvars); 
     
     % Loop for input into column
-    for column = 4:size(grpDataMod,2)
+    for column = 6:size(grpDataMod,2)
         data1 = OutGrpPP.SummaryStats.dataSumm(summStatsSet{2},column);
         data2 = OutGrpPP.SummaryStats.dataSumm(summStatsSet{3},column);
         
@@ -738,85 +581,85 @@ for iSubj = 1:size(outGrp,1)
 summStatsPP{iSubj,1} = zeros(13,numvars); 
 end
 
-for iSubj = 1:size(outGrp,1) % uses outGrp size which ignores SummaryStats
-    currInit = char(structInit(iSubj));
-    % Individual Totals
-        % Set up data table for total summary stats
-        blockSizeX = size(outGrp{iSubj,1},2);
-        blockSizeY = size(outGrp{iSubj,1},1);
-        OutGrpPP.(currInit).SummaryStats.Total.data = outGrp{iSubj,1};
-        OutGrpPP.(currInit).SummaryStats.Total.dataSumm(1:blockSizeY,4:blockSizeX) = ...
-          cell2mat(outGrp{iSubj,1}(1:blockSizeY,4:blockSizeX));
-      
-        % Assign summary stats
-        for b = 4:size(OutGrpPP.(currInit).SummaryStats.Total.dataSumm,2);
-            
-            data = OutGrpPP.(currInit).SummaryStats.Total.dataSumm(:,b);
-            currMean  = mean(data);
-            currStd   = std(data);
-            currStErr = currStd/sqrt(size(data,1));
-
-            summStatsPP{iSubj,1}(1,b) = currMean;
-            summStatsPP{iSubj,1}(2,b) = currStd;
-            summStatsPP{iSubj,1}(3,b) = currStErr;
-                    
-            OutGrpPP.(currInit).SummaryStats.Total.mean(b) = currMean;
-            OutGrpPP.(currInit).SummaryStats.Total.stDev(b) = currStd;
-            OutGrpPP.(currInit).SummaryStats.Total.stErr(b) = currStErr;
-        end % end column loop
-        
-    % Individual Pre- and Post-exercise
-    for iPreOrPost = 1:size(structState,2)
-        currState = char(structState(iPreOrPost));
-        
-        % Set up data table for summary stats
-            OutGrpPP.(currInit).SummaryStats.(currState).dataSumm(:,4:numvars) = ...
-                cell2mat(OutGrpPP.(currInit).(currState)(:,4:numvars));
-        
-        % Assign summary stats
-        for iCol = 4:size(OutGrpPP.(currInit).SummaryStats.(currState).dataSumm,2)
-            
-            % Select Data
-            data = OutGrpPP.(currInit).SummaryStats.(currState).dataSumm(:,iCol);
-            
-            % Number functions
-            currMean  = mean(data);
-            currStd   = std(data);
-            currStErr = currStd/sqrt(size(data,1));
-            
-            % Arrange stat block: Skip a line after individual totals(+4), 
-            % then skip a line for pre-exercise studies ((iPreOrPost-1)*4)
-            row = (iPreOrPost-1)*4+4;
-            
-            % Mean -> StDev -> StErr
-            summStatsPP{iSubj,1}(1+row,iCol) = currMean;
-            summStatsPP{iSubj,1}(2+row,iCol) = currStd;
-            summStatsPP{iSubj,1}(3+row,iCol) = currStErr;
-            
-            OutGrpPP.(currInit).SummaryStats.(currState).mean(iCol)  = currMean;
-            OutGrpPP.(currInit).SummaryStats.(currState).stDev(iCol) = currStd;
-            OutGrpPP.(currInit).SummaryStats.(currState).stErr(iCol) = currStErr;
-        end % end column loop
-    end % end pre-exe/post-exe loop
-    
-    % Assign T-test data
-    for iCol = 4:size(OutGrpPP.(currInit).SummaryStats.(currState).dataSumm,2)
-        
-        % Select columns
-        grp1 = OutGrpPP.(currInit).SummaryStats.Post.dataSumm(:,iCol);
-        grp2 = OutGrpPP.(currInit).SummaryStats.Pre.dataSumm(:,iCol);
-        
-        % 2-sample T-Test (paired-sample, homoscedastic, 2-tailed)
-        [h,p] = ttest(grp1,grp2);
-        
-        % Write result to structure
-        OutGrpPP.(currInit).SummaryStats.PrePostTTest(iCol) = {p};
-        
-        % Write result to summStats table shifted down 2 cells from
-        % previously generated summary stats
-        summStatsPP{iSubj,1}(3+row+2,iCol) = p;
-    end % end column loop
-end % end subject summ stats loop
+% for iSubj = 1:size(outGrp,1) % uses outGrp size which ignores SummaryStats
+%     currInit = char(structInit(iSubj));
+%     % Individual Totals
+%         % Set up data table for total summary stats
+%         blockSizeX = size(outGrp{iSubj,1},2);
+%         blockSizeY = size(outGrp{iSubj,1},1);
+%         OutGrpPP.(currInit).SummaryStats.Total.data = outGrp{iSubj,1};
+%         OutGrpPP.(currInit).SummaryStats.Total.dataSumm(1:blockSizeY,6:blockSizeX) = ...
+%           cell2mat(outGrp{iSubj,1}(1:blockSizeY,4:blockSizeX));
+%       
+%         % Assign summary stats
+%         for b = 6:size(OutGrpPP.(currInit).SummaryStats.Total.dataSumm,2);
+%             
+%             data = OutGrpPP.(currInit).SummaryStats.Total.dataSumm(:,b);
+%             currMean  = mean(data);
+%             currStd   = std(data);
+%             currStErr = currStd/sqrt(size(data,1));
+% 
+%             summStatsPP{iSubj,1}(1,b) = currMean;
+%             summStatsPP{iSubj,1}(2,b) = currStd;
+%             summStatsPP{iSubj,1}(3,b) = currStErr;
+%                     
+%             OutGrpPP.(currInit).SummaryStats.Total.mean(b) = currMean;
+%             OutGrpPP.(currInit).SummaryStats.Total.stDev(b) = currStd;
+%             OutGrpPP.(currInit).SummaryStats.Total.stErr(b) = currStErr;
+%         end % end column loop
+%         
+%     % Individual Pre- and Post-exercise
+%     for iPreOrPost = 1:size(structState,2)
+%         currState = char(structState(iPreOrPost));
+%         
+%         % Set up data table for summary stats
+%             OutGrpPP.(currInit).SummaryStats.(currState).dataSumm(:,6:numvars) = ...
+%                 cell2mat(OutGrpPP.(currInit).(currState)(:,6:numvars));
+%         
+%         % Assign summary stats
+%         for iCol = 6:size(OutGrpPP.(currInit).SummaryStats.(currState).dataSumm,2)
+%             
+%             % Select Data
+%             data = OutGrpPP.(currInit).SummaryStats.(currState).dataSumm(:,iCol);
+%             
+%             % Number functions
+%             currMean  = mean(data);
+%             currStd   = std(data);
+%             currStErr = currStd/sqrt(size(data,1));
+%             
+%             % Arrange stat block: Skip a line after individual totals(+4), 
+%             % then skip a line for pre-exercise studies ((iPreOrPost-1)*4)
+%             row = (iPreOrPost-1)*4+4;
+%             
+%             % Mean -> StDev -> StErr
+%             summStatsPP{iSubj,1}(1+row,iCol) = currMean;
+%             summStatsPP{iSubj,1}(2+row,iCol) = currStd;
+%             summStatsPP{iSubj,1}(3+row,iCol) = currStErr;
+%             
+%             OutGrpPP.(currInit).SummaryStats.(currState).mean(iCol)  = currMean;
+%             OutGrpPP.(currInit).SummaryStats.(currState).stDev(iCol) = currStd;
+%             OutGrpPP.(currInit).SummaryStats.(currState).stErr(iCol) = currStErr;
+%         end % end column loop
+%     end % end pre-exe/post-exe loop
+%     
+%     % Assign T-test data
+%     for iCol = 6:size(OutGrpPP.(currInit).SummaryStats.(currState).dataSumm,2)
+%         
+%         % Select columns
+%         grp1 = OutGrpPP.(currInit).SummaryStats.Post.dataSumm(:,iCol);
+%         grp2 = OutGrpPP.(currInit).SummaryStats.Pre.dataSumm(:,iCol);
+%         
+%         % 2-sample T-Test (paired-sample, homoscedastic, 2-tailed)
+%         [h,p] = ttest(grp1,grp2);
+%         
+%         % Write result to structure
+%         OutGrpPP.(currInit).SummaryStats.PrePostTTest(iCol) = {p};
+%         
+%         % Write result to summStats table shifted down 2 cells from
+%         % previously generated summary stats
+%         summStatsPP{iSubj,1}(3+row+2,iCol) = p;
+%     end % end column loop
+% end % end subject summ stats loop
 
 
 % Remove zeros from summary stat cells
