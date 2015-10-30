@@ -20,7 +20,6 @@ for i = 1:length(csvfiles)
     study = strrep(study,'.csv','');
     study = strrep(study,'''','');
     studyNameOutput = strsplit(study);
-<<<<<<< HEAD
     
     % Study Identifier variables
     patn    = cell2mat(studyNameOutput(1));
@@ -34,13 +33,6 @@ for i = 1:length(csvfiles)
     
     % Cleanup
     clear study b time temp pressure perfusion study studyNameOutput initial prePost date patn visit
-=======
-    initial = cell2mat(studyNameOutput(2));
-    prePost = cell2mat(studyNameOutput(4));
-    date = cell2mat(studyNameOutput(5));
-    save(study,'study','initial','prePost','date','time','temp','pressure','perfusion');
-    clear study b time temp pressure perfusion study studyNameOutput initial prePost date
->>>>>>> origin/master
 end
 
 fprintf('done! \n');
