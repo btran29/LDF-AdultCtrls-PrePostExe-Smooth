@@ -484,7 +484,7 @@ end
 ewb.Close(false);
 e.Quit
 
-<<<<<<< HEAD
+
 %% Gen_Perm calculations and comparisons
 % Generate the filtered mean analysis using pre- & post-exercise-matched 
 % study data. Due to the amount of new information generated, the absolute 
@@ -504,10 +504,10 @@ e.Quit
 % variables
 
 % Not implemented
-=======
+
 %% Filtered means Analysis
 % Removed (10-27-15)
->>>>>>> origin/master
+
 %% Resampling Analysis
 % Not implemented
 
