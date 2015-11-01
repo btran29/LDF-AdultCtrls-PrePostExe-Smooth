@@ -122,10 +122,6 @@ try
         %LDF_peaks_processing;
          
     % Use Eval function so variable names can serve as headers as well
-%     outputVars = cell(1,size(outputEvalVars,2));
-%     for f = 1:length(outputEvalVars)
-%         outputVars{f} = eval(outputEvalVars{f});
-%     end
     outputVars = cell(1,size(outputEvalVars,1));
     for f = 1:size(outputEvalVars,1)
         outputVars{f} = eval(outputEvalVars{f,1});
