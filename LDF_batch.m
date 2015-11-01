@@ -436,21 +436,21 @@ end
 
 column = numvars +2; % skip a column after last data block value
 
-dict = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o',...
+dictionary = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o',...
     'p','q','r','s','t','u','v','w','x','y','z'];
 
-dictSize = size(dict,2);
+dictSize = size(dictionary,2);
 
-if column > size(dict,2)
-    char1    = upper(dict(floor(column/dictSize)));
-    char2    = upper(dict(rem(column,dictSize)));
+if column > size(dictionary,2)
+    char1    = upper(dictionary(floor(column/dictSize)));
+    char2    = upper(dictionary(rem(column,dictSize)));
     blockPos = strcat(char1,char2);
 
 elseif column == dictSize
-    blockPos = upper(dict(floor(column/dictSize)));
+    blockPos = upper(dictionary(floor(column/dictSize)));
 
 else
-    char1 = upper(dict(rem(column,dictSize)));
+    char1 = upper(dictionary(rem(column,dictSize)));
     blockPos = char1;
 
 end
