@@ -1,5 +1,5 @@
 %% Batch Processing Script for Laser Doppler Flowmetry PORH Data
-% This script runs processing scripts for all .mat files in the current 
+% This batch script runs processing subroutines for all .mat files in the current 
 % directory and exports named variables into output.xlsx. Data is sorted by
 % total output and individual subject data, based on initials.
 %
