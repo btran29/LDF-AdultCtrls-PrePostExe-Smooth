@@ -1,7 +1,7 @@
 # LDF-AdultCtrls-PrePostExe-Smooth
 A collection of scripts to batch-analyze laser Doppler flowmetry (LDF) data with an experimentally-induced post-occlusive reactive hyperemia. These scripts were originally intended for internal use with the Periflux 5000 Laser Doppler Flowmeter system. There is one main method, LDF_batch. Required Matlab functions are located in the Subroutines folder. 
 
-Time, pressure (Press), temperature (Temp), and relative perfusion (Perf) is analyzed. The output is stratified by testing session and type of session (e.g. pre-exercise, post-exercise). Outputs are generated in tabular (Excel) and graphical formats (PNG).
+Variables analyzed include Time, pressure (Press), temperature (Temp), and relative perfusion (Perf). The output is stratified by testing session and type of session (e.g. pre-exercise, post-exercise). Outputs are generated in tabular (Excel) and graphical formats (PNG).
 
 ### Example Output
 
