@@ -5,7 +5,7 @@ Time, pressure, temperature, and relative perfusion is analyzed. The output is s
 
 ### Example Outputs
 
-![](https://github.com/btran29/LDF-AdultCtrls-PrePostExe-Smooth/blob/master/example/fig1.png)
+![](https://raw.githubusercontent.com/btran29/LDF-PORH-Analysis-Tools/master/example/fig1.png)
 
 **Summary figure**: Summary figure for a single testing session. The top graph shows the testing session data as a whole, as well as the selected portions of the data to be analyzed. The bottom graph shows the hyperemia in detail, with the variables we used to model the decay in perfusion levels following the occlusion.
 
