@@ -3,7 +3,7 @@ A collection of scripts to batch-analyze laser Doppler flowmetry (LDF) data with
 
 Time, pressure, temperature, and relative perfusion is analyzed. The output is stratified by testing session and type of session (e.g. pre-exercise, post-exercise). Outputs are generated in tabular (Excel) and graphical formats (PNG).
 
-### Example Outputs
+### Example Output
 
 ![](https://raw.githubusercontent.com/btran29/LDF-PORH-Analysis-Tools/master/example/fig1.png)
 
